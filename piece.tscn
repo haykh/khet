@@ -1,0 +1,20 @@
+[gd_scene load_steps=3 format=3 uid="uid://uo2mf18o5ikq"]
+
+[ext_resource type="Script" uid="uid://cctdsir3r3lew" path="res://pieces.gd" id="1_3makh"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_3makh"]
+size = Vector2(64, 64)
+
+[node name="Piece" type="Area2D" node_paths=PackedStringArray("shape_polygon", "outline_segments", "shape_ghost")]
+script = ExtResource("1_3makh")
+shape_polygon = NodePath("Shape")
+outline_segments = NodePath("Outline")
+shape_ghost = NodePath("Ghost")
+metadata/_edit_group_ = true
+
+[node name="Shape" type="Polygon2D" parent="."]
+
+[node name="Outline" type="Node2D" parent="."]
+
+[node name="Ghost" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_3makh")

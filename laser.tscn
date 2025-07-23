@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://tvdthjhbujjk"]
+
+[ext_resource type="Script" uid="uid://dk5mwbmr05jrg" path="res://laser.gd" id="1_fn5yt"]
+
+[node name="Laser" type="Polygon2D" node_paths=PackedStringArray("beam")]
+color = Color(0.1248, 0.22544, 0.48, 1)
+polygon = PackedVector2Array(-8, -8, 8, -8, 16, 0, 8, 8, -8, 8)
+script = ExtResource("1_fn5yt")
+beam = NodePath("Beam")
+
+[node name="Beam" type="Line2D" parent="."]
