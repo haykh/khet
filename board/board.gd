@@ -3,7 +3,7 @@ extends Node2D
 
 @export_group("Colors", "color_")
 @export_color_no_alpha var color_board := Color("#15161a")
-@export_color_no_alpha var color_neutral := Color("#1a1e2f")
+@export_color_no_alpha var color_neutral := Color("#1d1e24")
 @export_color_no_alpha var color_silver := Color("#a0afc2")
 @export_color_no_alpha var color_red := Color("#ff2019")
 
@@ -76,9 +76,9 @@ func put_laser(pos: Vector2i, orientation: int) -> void:
 	laser.rotation = (orientation as float) * PI / 2.0
 	lasers_container.add_child(laser)
 
-func spawn_piece(pos: Vector2i, piece_type: Global.PieceType, orientation: int) -> void:
+func spawn_piece(piece_type: Pieces.Type, piece_team: Pieces.Team, pos: Vector2i, orientation: int) -> void:
 	var piece := piece_scene.instantiate() as Piece
-	piece.initialize(self, pos, orientation, piece_type, tile_size)
+	piece.initialize(self, piece_type, piece_team, pos, orientation, tile_size)
 	piece.position = cell_to_pixel(pos)
 	piece.rotation = (orientation as float) * PI / 2.0
 	piece.connect("sgnl_pickup", _on_piece_pickup)
@@ -97,9 +97,9 @@ func _ready() -> void:
 	put_laser(Vector2i(0, 0), 1)
 	
 	# add the pieces
-	spawn_piece(Vector2i(0, 0), Global.PieceType.PYRAMID, 1)
-	spawn_piece(Vector2i(4, 6), Global.PieceType.DJED, 0)
-	spawn_piece(Vector2i(8, 2), Global.PieceType.OBELISK, 0)
+	spawn_piece(Pieces.Type.PYRAMID, Pieces.Team.RED, Vector2i(0, 0), 1)
+	spawn_piece(Pieces.Type.DJED, Pieces.Team.SILVER, Vector2i(4, 6), 0)
+	spawn_piece(Pieces.Type.OBELISK, Pieces.Team.SILVER, Vector2i(8, 2), 0)
 
 func _input(event: InputEvent) -> void:
 	if drag_state.piece:
@@ -117,19 +117,18 @@ func _input(event: InputEvent) -> void:
 			var mouse_btn_event := event as InputEventMouseButton
 			if not mouse_btn_event.pressed and mouse_btn_event.button_index == MOUSE_BUTTON_LEFT:
 				_on_piece_drop()
-				
 
 # = = = = = = = = = = = = = = = = 
 # signal callbacks
 func _on_piece_pickup(piece: Piece) -> void:
 	if drag_state.piece == null:
 		drag_state.piece = piece
-		drag_state.piece.state = Global.PieceState.PICKED
+		drag_state.piece.state = Pieces.State.PICKED
 		drag_state.offset = piece.position - get_global_mouse_position()
 		Input.set_default_cursor_shape(Input.CURSOR_DRAG)
 
 func _on_piece_drop() -> void:
-	drag_state.piece.state = Global.PieceState.IDLE
+	drag_state.piece.state = Pieces.State.IDLE
 	drag_state.piece = null
 	drag_state.offset = Vector2.ZERO
 	Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)

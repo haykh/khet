@@ -8,7 +8,6 @@
 
 [node name="Board" type="Node2D" node_paths=PackedStringArray("board", "board_tilemap", "pieces_container", "lasers_container")]
 script = ExtResource("1_p0ybc")
-color_neutral = Color(0.0913, 0.0947283, 0.11, 1)
 board = NodePath("Shape")
 board_tilemap = NodePath("Shape/TileMapLayer")
 pieces_container = NodePath("Pieces")

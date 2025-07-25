@@ -28,70 +28,6 @@ enum Rotation {
 }
 
 # = = = = = = = = = = = = = = = = 
-# Pieces
-enum PieceType {
-	NONE,
-	PYRAMID,
-	DJED,
-	OBELISK,
-	# more to be added
-}
-
-enum PieceState {
-	NONE,
-	IDLE,
-	ANIMATING,
-	PICKED,
-}
-
-enum SurfaceType {
-	NONE,
-	REFLECTOR,
-	ABSORBER
-}
-
-const PIECE_PADDING = 0.1
-const PIECE_SIZE = 1.0 - PIECE_PADDING * 2.0
-const PIECE_HALFSIZE = PIECE_SIZE * 0.5
-
-class PieceShape:
-	var shape: Array[Vector2]
-	var surfaces: Array[SurfaceType]
-	func _init(shp: Array[Vector2], srf: Array[SurfaceType]) -> void:
-		self.shape = shp
-		self.surfaces = srf
-
-static var Pieces: Dictionary[PieceType, PieceShape] = {
-	PieceType.PYRAMID: PieceShape.new([
-		Vector2(-PIECE_HALFSIZE, -PIECE_HALFSIZE),
-		Vector2(-PIECE_HALFSIZE, PIECE_HALFSIZE),
-		Vector2(PIECE_HALFSIZE, -PIECE_HALFSIZE)
-	], [
-		SurfaceType.ABSORBER,
-		SurfaceType.REFLECTOR,
-		SurfaceType.ABSORBER
-	]),
-	PieceType.DJED: PieceShape.new([
-		Vector2(-PIECE_HALFSIZE, PIECE_HALFSIZE),
-		Vector2(PIECE_HALFSIZE, -PIECE_HALFSIZE)
-	], [
-		SurfaceType.REFLECTOR,
-		SurfaceType.REFLECTOR,
-	]),
-	PieceType.OBELISK: PieceShape.new([
-		Vector2(-PIECE_HALFSIZE, -PIECE_HALFSIZE),
-		Vector2(-PIECE_HALFSIZE, PIECE_HALFSIZE),
-		Vector2(PIECE_HALFSIZE, PIECE_HALFSIZE),
-		Vector2(PIECE_HALFSIZE, -PIECE_HALFSIZE)
-	], [
-		SurfaceType.ABSORBER,
-		SurfaceType.ABSORBER,
-		SurfaceType.ABSORBER,
-		SurfaceType.ABSORBER,
-	])
-}
-
-# = = = = = = = = = = = = = = = = 
 # Collisions
 
 ## Helper class for holding a result of an intersection of a beam with a segment
@@ -105,40 +41,46 @@ class Intersection:
 ## Helper class for holding a result of searching for the closest intersection
 class ClosestIntersection:
 	var intersection: Intersection
-	var segment: Segment
-	func _init(inter := Intersection.new(false), sgmt: Segment = null) -> void:
+	var segment: SegmentWithCallback
+	func _init(inter := Intersection.new(false), sgmt: SegmentWithCallback = null) -> void:
 		self.intersection = inter
 		self.segment = sgmt
 
 ## Segment class holding a pair of two points.
-##
-## Together with [member Segment.start] and [member Segment.end] holds an optional callback [member Segment.callback], 
-## which is used when intersection happens with this [param Segment].
 class Segment:
 	var start: Vector2
 	var end: Vector2
-	var callback: Variant
-	func _init(st: Vector2, en: Vector2, cbck: Variant = null) -> void:
+	func _init(st: Vector2, en: Vector2) -> void:
 		self.start = st
 		self.end = en
-		self.callback = cbck
 	
 	func normal() -> Vector2:
 		return (self.start - self.end).normalized().orthogonal().normalized()
 
+## Segment class holding a pair of two points with a callback.
+##
+## Together with [member Segment.start] and [member Segment.end] holds an optional callback [member SegmentWithCallback.callback], 
+## which is used when intersection happens with this [param Segment].
+class SegmentWithCallback:
+	extends Segment
+	var callback: Variant
+	func _init(st: Vector2, en: Vector2, cbck: Variant = null) -> void:
+		super(st, en)
+		self.callback = cbck
+
 ## Returns an [code]Intersection[/code] object to indicate whether two segments intsersect.
-static func segments_intersect(segmentA: Segment, segmentB: Segment) -> Intersection:
+static func segments_intersect(segmentA: SegmentWithCallback, segmentB: SegmentWithCallback) -> Intersection:
 	var result: Variant = Geometry2D.segment_intersects_segment(segmentA.start, segmentA.end, segmentB.start, segmentB.end)
 	if result != null:
 		return Intersection.new(true, result as Vector2)
 	return Intersection.new(false)
 
-## Finds the closest intersection by a given [param Segment] with a collection of other [param Segment] objects.
+## Finds the closest intersection by a given [param SegmentWithCallback] with a collection of other [param SegmentWithCallback] objects.
 ##
-## Distance is measured from the [member Segment.start] of the [param segment].
-static func find_closest_intersection(segment: Segment, collection_of_segments: Array[Segment]) -> ClosestIntersection:
+## Distance is measured from the [member SegmentWithCallback.start] of the [param segment].
+static func find_closest_intersection(segment: SegmentWithCallback, collection_of_segments: Array[SegmentWithCallback]) -> ClosestIntersection:
 	var closest_hit := Intersection.new(false)
-	var closest_hit_segment: Segment = null
+	var closest_hit_segment: SegmentWithCallback = null
 	var closest_hit_distance := INF
 	for other_segment in collection_of_segments:
 		var hit := segments_intersect(segment, other_segment)

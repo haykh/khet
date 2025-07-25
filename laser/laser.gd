@@ -48,11 +48,11 @@ func _draw() -> void:
 		var points: Array[Vector2] = [origin]
 		
 		for _i in beam_max_steps:
-			var segments: Array[Global.Segment]
+			var segments: Array[Global.SegmentWithCallback]
 			for i in range(board_ref.board.polygon.size()):
 				var pt1 := board_ref.board.polygon[i]
 				var pt2 := board_ref.board.polygon[(i + 1) % board_ref.board.polygon.size()]
-				segments.append(Global.Segment.new(
+				segments.append(Global.SegmentWithCallback.new(
 					board_ref.board.to_global(pt1),
 					board_ref.board.to_global(pt2),
 					func() -> bool:
@@ -61,19 +61,19 @@ func _draw() -> void:
 			for child in board_ref.pieces_container.get_children():
 				if child is Piece:
 					var piece := (child as Piece)
-					var piece_segments := piece.outline_segments.get_children()
+					var piece_segments := piece.surfaces.get_children()
 					var num_piece_segments := piece_segments.size()
-					assert (num_piece_segments == Global.Pieces[piece.type].surfaces.size(), "# of piece segments does not match the # of expected surfaces")
+					assert (num_piece_segments == Pieces.Shapes[piece.type].surfaces.size(), "# of piece segments does not match the # of expected surfaces")
 					for s in num_piece_segments:
 						var sgmt_line := piece_segments[s] as Line2D
-						var sgmt_type := Global.Pieces[piece.type].surfaces[s]
-						segments.append(Global.Segment.new(
+						var sgmt_type := Pieces.Shapes[piece.type].surfaces[s]
+						segments.append(Global.SegmentWithCallback.new(
 							sgmt_line.to_global(sgmt_line.points[0]),
 							sgmt_line.to_global(sgmt_line.points[1]),
 							func() -> bool:
-								return sgmt_type == Global.SurfaceType.REFLECTOR
+								return sgmt_type == Pieces.SurfaceType.REFLECTOR
 						))
-			var next_beam := Global.Segment.new(origin, origin + dir * beam_max_length)
+			var next_beam := Global.SegmentWithCallback.new(origin, origin + dir * beam_max_length)
 			var closest_hit := Global.find_closest_intersection(next_beam, segments)
 			if closest_hit.intersection.hit:
 				if (closest_hit.segment.callback as Callable).call():
@@ -86,4 +86,3 @@ func _draw() -> void:
 					break
 		for p in points:
 			beam.add_point(beam.to_local(p))
-		
