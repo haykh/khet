@@ -24,62 +24,82 @@ enum Team {
 enum SurfaceType {
 	NONE,
 	REFLECTOR,
-	ABSORBER
+	ABSORBER,
 }
 
-const _padding = 0.1
-const _size = 1.0 - _padding * 2.0
-const _halfsize = _size * 0.5
+class Surface:
+	var segment: Global.Segment
+	var type: SurfaceType
+	func _init(sgmt: Global.Segment, tp: SurfaceType) -> void:
+		self.segment = sgmt
+		self.type = tp
+
+class Polygon:
+	var points: Array[Vector2]
+	var modulate: float
+	func _init(pts: Array[Vector2], mdl: float) -> void:
+		self.points = pts
+		self.modulate = mdl
 
 class Shape:
-	var shape: Array[Vector2]
-	var outlines: Array[Global.Segment]
-	var surfaces: Array[SurfaceType]
-	func _init(shp: Array[Vector2], otl: Array[Global.Segment], srf: Array[SurfaceType]) -> void:
-		self.shape = shp
-		self.outlines = otl
+	var scale := 0.75
+	var polygons: Array[Polygon]
+	var surfaces: Array[Surface]
+	func _init(pgn: Array[Polygon], srf: Array[Surface]) -> void:
+		self.polygons = pgn
 		self.surfaces = srf
+	
+	func add_polygons(container: Node2D, tilesize: Vector2, color: Color) -> void:
+		for poly in self.polygons:
+			var shape := PackedVector2Array()
+			var shape_polygon := Polygon2D.new()
+			for pt in poly.points:
+				shape.append(pt * tilesize * self.scale)
+			shape_polygon.polygon = shape
+			shape_polygon.color = color
+			shape_polygon.modulate = Color(poly.modulate, poly.modulate, poly.modulate)
+			container.add_child(shape_polygon)
+	
+	func add_surfaces(container: Node2D, tilesize: Vector2, color_dict: Dictionary[SurfaceType, Color]) -> void:
+		for surf in self.surfaces:
+			var line := Line2D.new()
+			line.width = 2
+			line.points = [surf.segment.start * tilesize * self.scale, surf.segment.end * tilesize * self.scale]
+			line.default_color = color_dict[surf.type]
+			container.add_child(line)
 
 static var Shapes: Dictionary[Type, Shape] = {
 	Type.PYRAMID: Shape.new([
-		Vector2(-_halfsize, -_halfsize),
-		Vector2(-_halfsize, _halfsize),
-		Vector2(_halfsize, -_halfsize)
+		Polygon.new([Vector2(-0.55, -0.55), Vector2(-0.55, 0.55), Vector2(0.55, 0.55), Vector2(0.55, -0.55)], 0.65),
+		Polygon.new([Vector2(-0.5, -0.5), Vector2(-0.5, 0.5), Vector2(0.5, 0.5), Vector2(0.5, -0.5)], 0.75),
+		Polygon.new([Vector2(-0.5, -0.5), Vector2(-0.5, 0.5), Vector2(0.0, 0.0)], 1.2),
+		Polygon.new([Vector2(-0.5, -0.5), Vector2(0.5, -0.5), Vector2(0.0, 0.0)], 1.0),
 	], [
-		Global.Segment.new(Vector2(-_halfsize, -_halfsize), Vector2(-_halfsize, _halfsize)),
-		Global.Segment.new(Vector2(-_halfsize, _halfsize), Vector2(_halfsize, -_halfsize)),
-		Global.Segment.new(Vector2(_halfsize, -_halfsize), Vector2(-_halfsize, -_halfsize))
-	], [
-		SurfaceType.ABSORBER,
-		SurfaceType.REFLECTOR,
-		SurfaceType.ABSORBER
+		Surface.new(Global.Segment.new(Vector2(0.5, -0.5), Vector2(-0.5, 0.5)), SurfaceType.REFLECTOR),
+		Surface.new(Global.Segment.new(Vector2(0.5, -0.5), Vector2(-0.25, -0.25)), SurfaceType.ABSORBER),
+		Surface.new(Global.Segment.new(Vector2(-0.5, 0.5), Vector2(-0.25, -0.25)), SurfaceType.ABSORBER),
 	]),
 	Type.DJED: Shape.new([
-		Vector2(-_halfsize, _halfsize),
-		Vector2(-_halfsize, _halfsize * 0.75),
-		Vector2(_halfsize * 0.75, -_halfsize),
-		Vector2(_halfsize, -_halfsize),
-		Vector2(_halfsize, -_halfsize * 0.75),
-		Vector2(-_halfsize * 0.75, _halfsize)
+		Polygon.new([Vector2(-0.55, -0.55), Vector2(-0.55, 0.55), Vector2(0.55, 0.55), Vector2(0.55, -0.55)], 0.65),
+		Polygon.new([Vector2(-0.5, -0.5), Vector2(-0.5, 0.5), Vector2(0.5, 0.5), Vector2(0.5, -0.5)], 0.75),
+		Polygon.new([Vector2(0.3, -0.5), Vector2(0.5, -0.3), Vector2(-0.3, 0.5), Vector2(-0.5, 0.3)], 1.0),
 	], [
-		Global.Segment.new(Vector2(-_halfsize, _halfsize), Vector2(_halfsize, -_halfsize)),
-	], [
-		SurfaceType.REFLECTOR,
+		Surface.new(Global.Segment.new(Vector2(0.4, -0.4), Vector2(-0.4, 0.4)), SurfaceType.REFLECTOR),
 	]),
 	Type.OBELISK: Shape.new([
-		Vector2(-_halfsize, -_halfsize),
-		Vector2(-_halfsize, _halfsize),
-		Vector2(_halfsize, _halfsize),
-		Vector2(_halfsize, -_halfsize)
+		Polygon.new([Vector2(-0.55, -0.55), Vector2(-0.55, 0.55), Vector2(0.55, 0.55), Vector2(0.55, -0.55)], 0.65),
+		Polygon.new([Vector2(-0.5, -0.5), Vector2(-0.5, 0.5), Vector2(-0.3, 0.3), Vector2(-0.3, -0.3)], 0.75),
+		Polygon.new([Vector2(-0.5, 0.5), Vector2(0.5, 0.5), Vector2(0.3, 0.3), Vector2(-0.3, 0.3)], 1.0),
+		Polygon.new([Vector2(0.5, 0.5), Vector2(0.5, -0.5), Vector2(0.3, -0.3), Vector2(0.3, 0.3)], 1.2),
+		Polygon.new([Vector2(0.5, -0.5), Vector2(-0.5, -0.5), Vector2(-0.3, -0.3), Vector2(0.3, -0.3)], 1.0),
+		Polygon.new([Vector2(0.3, -0.3), Vector2(-0.3, -0.3), Vector2(0.0, 0.0)], 1.2),
+		Polygon.new([Vector2(-0.3, 0.3), Vector2(0.3, 0.3), Vector2(0.0, 0.0)], 1.2),
+		Polygon.new([Vector2(-0.3, -0.3), Vector2(-0.3, 0.3), Vector2(0.0, 0.0)], 1.0),
+		Polygon.new([Vector2(0.3, 0.3), Vector2(0.3, -0.3), Vector2(0.0, 0.0)], 1.0),
 	], [
-		Global.Segment.new(Vector2(-_halfsize, -_halfsize), Vector2(-_halfsize, _halfsize)),
-		Global.Segment.new(Vector2(-_halfsize, _halfsize), Vector2(_halfsize, _halfsize)),
-		Global.Segment.new(Vector2(_halfsize, _halfsize), Vector2(_halfsize, -_halfsize)),
-		Global.Segment.new(Vector2(_halfsize, -_halfsize), Vector2(-_halfsize, -_halfsize)),
-	], [
-		SurfaceType.ABSORBER,
-		SurfaceType.ABSORBER,
-		SurfaceType.ABSORBER,
-		SurfaceType.ABSORBER,
-	])
+		Surface.new(Global.Segment.new(Vector2(0.3, -0.3), Vector2(0.3, 0.3)), SurfaceType.ABSORBER),
+		Surface.new(Global.Segment.new(Vector2(0.3, 0.3), Vector2(-0.3, 0.3)), SurfaceType.ABSORBER),
+		Surface.new(Global.Segment.new(Vector2(-0.3, -0.3), Vector2(0.3, -0.3)), SurfaceType.ABSORBER),
+		Surface.new(Global.Segment.new(Vector2(-0.3, 0.3), Vector2(-0.3, -0.3)), SurfaceType.ABSORBER),
+	]),
 }

@@ -18,7 +18,7 @@ extends Node2D
 @export var piece_scene: PackedScene
 
 var nx: int = 10
-var ny: int = 10
+var ny: int = 8
 var sx: int = 0
 var sy: int = 0
 var xmax: int = 0
@@ -89,6 +89,7 @@ func spawn_piece(piece_type: Pieces.Type, piece_team: Pieces.Team, pos: Vector2i
 # = = = = = = = = = = = = = = = = 
 # built-in functions
 func _ready() -> void:
+	z_index = 1
 	# add tiles
 	get_board_dimensions()
 	board.initialize(board_tilemap, Vector2(sx, sy), Vector2(nx, ny), tile_size, color_board, color_neutral, color_silver, color_red)
@@ -123,12 +124,12 @@ func _input(event: InputEvent) -> void:
 func _on_piece_pickup(piece: Piece) -> void:
 	if drag_state.piece == null:
 		drag_state.piece = piece
-		drag_state.piece.state = Pieces.State.PICKED
+		drag_state.piece.animate_pickup()
 		drag_state.offset = piece.position - get_global_mouse_position()
 		Input.set_default_cursor_shape(Input.CURSOR_DRAG)
 
 func _on_piece_drop() -> void:
-	drag_state.piece.state = Pieces.State.IDLE
+	drag_state.piece.animate_drop()
 	drag_state.piece = null
 	drag_state.offset = Vector2.ZERO
 	Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)

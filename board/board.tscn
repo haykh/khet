@@ -17,7 +17,7 @@ piece_scene = ExtResource("2_psm7c")
 
 [node name="Shape" type="Polygon2D" parent="."]
 position = Vector2(984, 560)
-polygon = PackedVector2Array(-440, -440, -440, 440, 440, 440, 440, -440)
+polygon = PackedVector2Array(-440, -352, -440, 352, 440, 352, 440, -352)
 script = ExtResource("4_hecc7")
 
 [node name="TileMapLayer" type="TileMapLayer" parent="Shape"]

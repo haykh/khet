@@ -5,14 +5,14 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_3makh"]
 size = Vector2(64, 64)
 
-[node name="Piece" type="Area2D" node_paths=PackedStringArray("shape_polygon", "surfaces", "shape_ghost")]
+[node name="Piece" type="Area2D" node_paths=PackedStringArray("polygons", "surfaces", "shape_ghost")]
 script = ExtResource("1_3makh")
-shape_polygon = NodePath("Shape")
+polygons = NodePath("Polygons")
 surfaces = NodePath("Surfaces")
 shape_ghost = NodePath("Ghost")
 metadata/_edit_group_ = true
 
-[node name="Shape" type="Polygon2D" parent="."]
+[node name="Polygons" type="Node2D" parent="."]
 
 [node name="Surfaces" type="Node2D" parent="."]
 

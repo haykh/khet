@@ -27,6 +27,7 @@ func initialize(brd: Board, crd: Vector2i, ori: int) -> void:
 	active = false
 	coord = crd
 	orientation = ori
+	beam.z_index = 20
 	beam.width = 4
 	beam.default_color = color_laser
 	beam.clear_points()
@@ -66,7 +67,7 @@ func _draw() -> void:
 					assert (num_piece_segments == Pieces.Shapes[piece.type].surfaces.size(), "# of piece segments does not match the # of expected surfaces")
 					for s in num_piece_segments:
 						var sgmt_line := piece_segments[s] as Line2D
-						var sgmt_type := Pieces.Shapes[piece.type].surfaces[s]
+						var sgmt_type := Pieces.Shapes[piece.type].surfaces[s].type
 						segments.append(Global.SegmentWithCallback.new(
 							sgmt_line.to_global(sgmt_line.points[0]),
 							sgmt_line.to_global(sgmt_line.points[1]),

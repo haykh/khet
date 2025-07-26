@@ -4,11 +4,11 @@ extends Area2D
 @export_group("Colors", "color_")
 @export_color_no_alpha var color_silver := Color("#8f8f8f")
 @export_color_no_alpha var color_red := Color("#d42f2c")
-@export_color_no_alpha var color_surface_reflector := Color("#55a7e5")
-@export_color_no_alpha var color_surface_absorber := Color("#121212")
+@export var color_surface_reflector := Color("#55a7e5")
+@export var color_surface_absorber := Color("#ffffff00")
 
 @export_group("Nodes")
-@export var shape_polygon: Polygon2D
+@export var polygons: Node2D
 @export var surfaces: Node2D
 @export var shape_ghost: CollisionShape2D
 
@@ -18,6 +18,8 @@ signal sgnl_hovered(piece: Piece)
 signal sgnl_unhovered(piece: Piece)
 signal sgnl_done_animating()
 
+# color dictionaries
+
 # constants
 var type := Pieces.Type.NONE
 var team := Pieces.Team.NONE
@@ -26,7 +28,6 @@ var team := Pieces.Team.NONE
 var state := Pieces.State.NONE
 var coord := Vector2i.ZERO
 var orientation := 0
-var active_tween: Tween = null
 
 # external refs
 var board_ref: Board = null
@@ -40,48 +41,53 @@ func initialize(brd: Board, typ: Pieces.Type, tm: Pieces.Team, crd: Vector2i, or
 	type = typ
 	team = tm
 	
+	z_index = 10
 	state = Pieces.State.IDLE
 	coord = crd
 	orientation = ori
 	
+	var team_colors: Dictionary[Pieces.Team, Color] = {
+		Pieces.Team.SILVER: color_silver,
+		Pieces.Team.RED: color_red,
+	}
+	var surftype_colors: Dictionary[Pieces.SurfaceType, Color] = {
+		Pieces.SurfaceType.REFLECTOR: color_surface_reflector,
+		Pieces.SurfaceType.ABSORBER: color_surface_absorber,
+	}
+	
 	assert(type in Pieces.Shapes, "Shape for the given piece type not defined")
 	
-	# shape
-	var shape := PackedVector2Array()
-	for pt in Pieces.Shapes[type].shape:
-		shape.append(pt * ts)
-	shape_polygon.polygon = shape
-	match team:
-		Pieces.Team.SILVER:
-			shape_polygon.color = color_silver
-		Pieces.Team.RED:
-			shape_polygon.color = color_red
-	
-	# surfaces
-	var nsurfaces := Pieces.Shapes[type].outlines.size()
-	assert(nsurfaces == Pieces.Shapes[type].surfaces.size(), "# of surfaces does not match the # of outlines")
-	for s in nsurfaces:
-		var pt1 := Pieces.Shapes[type].outlines[s].start
-		var pt2 := Pieces.Shapes[type].outlines[s].end
-		var surface_type := Pieces.Shapes[type].surfaces[s]
-		
-		var line := Line2D.new()
-		line.width = 2
-		line.points = [pt1 * ts, pt2 * ts]
-		match surface_type:
-			Pieces.SurfaceType.ABSORBER:
-				line.default_color = color_surface_absorber
-				line.z_index = 10
-			Pieces.SurfaceType.REFLECTOR:
-				line.default_color = color_surface_reflector
-				line.z_index = 11
-		surfaces.add_child(line)
+	# piece shape & interaction surfaces
+	Pieces.Shapes[type].add_polygons(polygons, ts, team_colors[team])
+	Pieces.Shapes[type].add_surfaces(surfaces, ts, surftype_colors)
 	
 	# hover detection with the ghost
 	(shape_ghost.shape as RectangleShape2D).set_size(ts)
 
 # = = = = = = = = = = = = = = = = 
 # tweens
+func animate_pickup() -> void:
+	z_index = 11
+	var new_tween := create_tween()
+	new_tween.tween_property(self, "scale", Vector2(1.25, 1.25), 0.1)
+	new_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	new_tween.finished.connect(
+		func():
+			state = Pieces.State.PICKED
+			sgnl_done_animating.emit()
+	)
+
+func animate_drop() -> void:
+	z_index = 10
+	var new_tween := create_tween()
+	new_tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.1)
+	new_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	new_tween.finished.connect(
+		func():
+			state = Pieces.State.IDLE
+			sgnl_done_animating.emit()
+	)
+
 func animate_to_pos(pixel_pos: Vector2, board_crd: Vector2i) -> void:
 	var new_tween := create_tween()
 	new_tween.tween_property(self, "position", pixel_pos, 0.1)
@@ -91,11 +97,6 @@ func animate_to_pos(pixel_pos: Vector2, board_crd: Vector2i) -> void:
 			self.coord = board_crd
 			sgnl_done_animating.emit()
 	)
-	if active_tween != null and active_tween.is_running():
-		active_tween.stop()
-		active_tween = new_tween
-	else:
-		active_tween = new_tween
 
 func animate_rotation(rot: Global.Rotation) -> void:
 	var new_tween := create_tween()
@@ -107,10 +108,6 @@ func animate_rotation(rot: Global.Rotation) -> void:
 			self.orientation = new_orientation
 			sgnl_done_animating.emit()
 	)
-	if active_tween != null and active_tween.is_running():
-		active_tween.tween_subtween(new_tween)
-	else:
-		active_tween = new_tween
 
 # = = = = = = = = = = = = = = = = 
 # built-in functions
@@ -136,11 +133,11 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 func _on_mouse_entered() -> void:
 	if board_ref.drag_state.piece == null:
 		Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
-		shape_polygon.modulate = Color(1.2, 1.2, 1.2)
+		#shape_polygon.modulate = Color(1.2, 1.2, 1.2)
 		sgnl_hovered.emit(self)
 
 func _on_mouse_exited() -> void:
 	if board_ref.drag_state.piece == null:
 		Input.set_default_cursor_shape(Input.CURSOR_ARROW)
-		shape_polygon.modulate = Color.WHITE
+		#shape_polygon.modulate = Color.WHITE
 		sgnl_unhovered.emit(self)
