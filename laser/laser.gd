@@ -1,12 +1,14 @@
 class_name Laser
-extends Node2D
+extends Polygon2D
 
 @export_group("Colors", "color_")
-@export_color_no_alpha var color_base := Color("#452a68")
-@export_color_no_alpha var color_laser := Color("#cc0013")
+@export_color_no_alpha var color_base := Color("#303bbf")
+@export_color_no_alpha var color_laser := Color("#e00000")
+@export_color_no_alpha var color_laser_highlight := Color("#ffdbd5")
 
 @export_group("Nodes")
 @export var beam: Line2D
+@export var beam_highlight: Line2D
 
 @export_group("Laser Beam", "beam_")
 @export var beam_max_steps := 100
@@ -27,10 +29,15 @@ func initialize(brd: Board, crd: Vector2i, ori: int) -> void:
 	active = false
 	coord = crd
 	orientation = ori
+	color = color_base
 	beam.z_index = 20
 	beam.width = 4
 	beam.default_color = color_laser
+	beam_highlight.z_index = 21
+	beam_highlight.width = 1.5
+	beam_highlight.default_color = color_laser_highlight
 	beam.clear_points()
+	beam_highlight.clear_points()
 
 func _input(event: InputEvent):
 	if event.is_action_pressed("fire"):
@@ -42,6 +49,7 @@ func _input(event: InputEvent):
 
 func _draw() -> void:
 	beam.clear_points()
+	beam_highlight.clear_points()
 	if active:
 		var origin := board_ref.board_to_pixel((coord as Vector2) + Vector2(0.5, 0.5) - 0.45 * Global.Direction.vec2(orientation))
 		var dir := Global.Direction.vec2(orientation)
@@ -87,3 +95,4 @@ func _draw() -> void:
 					break
 		for p in points:
 			beam.add_point(beam.to_local(p))
+			beam_highlight.add_point(beam_highlight.to_local(p))

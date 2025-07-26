@@ -2,10 +2,14 @@
 
 [ext_resource type="Script" uid="uid://dk5mwbmr05jrg" path="res://laser/laser.gd" id="1_fn5yt"]
 
-[node name="Laser" type="Polygon2D" node_paths=PackedStringArray("beam")]
-color = Color(0.1248, 0.22544, 0.48, 1)
+[node name="Laser" type="Polygon2D" node_paths=PackedStringArray("beam", "beam_highlight")]
 polygon = PackedVector2Array(-8, -8, 8, -8, 16, 0, 8, 8, -8, 8)
 script = ExtResource("1_fn5yt")
+color_laser = Color(0.87731, 0.000309962, 0.000170287, 1)
+color_laser_highlight = Color(1, 0.858192, 0.834241, 1)
 beam = NodePath("Beam")
+beam_highlight = NodePath("BeamHighlight")
 
 [node name="Beam" type="Line2D" parent="."]
+
+[node name="BeamHighlight" type="Line2D" parent="."]

@@ -2,7 +2,8 @@ class_name BoardShape
 extends Polygon2D
 
 func initialize(
-	tilemap: BoardTilemap, 
+	markers_container: Node2D,
+	tilemap: BoardTilemap,
 	extents: Vector2i,
 	dimensions: Vector2i,
 	tile_size: Vector2i,
@@ -21,6 +22,10 @@ func initialize(
 	for i in range(nx):
 		for j in range(ny):
 			tilemap.color_cell(Vector2i(i, j), color_neutral)
+			var marker := MoveMarker.new()
+			marker.initialize(Vector2i(i, j), tile_size)
+			markers_container.add_child(marker)
+	markers_container.position = position - (extents as Vector2) / 2.0
 	for j in range(ny):
 		tilemap.color_cell(Vector2i(0, j), new_color_red)
 		tilemap.color_cell(Vector2i(nx - 1, j), new_color_silver)

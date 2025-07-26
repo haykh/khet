@@ -34,7 +34,7 @@ var board_ref: Board = null
 
 # = = = = = = = = = = = = = = = = 
 # utility functions
-func initialize(brd: Board, typ: Pieces.Type, tm: Pieces.Team, crd: Vector2i, ori: int, ts: Vector2) -> void:
+func initialize(brd: Board, tm: Pieces.Team, typ: Pieces.Type, crd: Vector2i, ori: int, ts: Vector2) -> void:
 	assert (typ != Pieces.Type.NONE, "Piece type is NONE")
 	assert (tm != Pieces.Team.NONE, "Piece team is NONE")
 	board_ref = brd
@@ -68,45 +68,45 @@ func initialize(brd: Board, typ: Pieces.Type, tm: Pieces.Team, crd: Vector2i, or
 # tweens
 func animate_pickup() -> void:
 	z_index = 11
-	var new_tween := create_tween()
-	new_tween.tween_property(self, "scale", Vector2(1.25, 1.25), 0.1)
-	new_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	new_tween.finished.connect(
-		func():
-			state = Pieces.State.PICKED
-			sgnl_done_animating.emit()
+	create_tween()\
+		.tween_property(self, "scale", Vector2(1.25, 1.25), 0.25)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)\
+		.finished.connect(
+			func():
+				state = Pieces.State.PICKED
+				sgnl_done_animating.emit()
 	)
 
 func animate_drop() -> void:
 	z_index = 10
-	var new_tween := create_tween()
-	new_tween.tween_property(self, "scale", Vector2(1.0, 1.0), 0.1)
-	new_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	new_tween.finished.connect(
-		func():
-			state = Pieces.State.IDLE
-			sgnl_done_animating.emit()
+	create_tween()\
+		.tween_property(self, "scale", Vector2(1.0, 1.0), 0.25)\
+		.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)\
+		.finished.connect(
+			func():
+				state = Pieces.State.IDLE
+				sgnl_done_animating.emit()
 	)
 
 func animate_to_pos(pixel_pos: Vector2, board_crd: Vector2i) -> void:
-	var new_tween := create_tween()
-	new_tween.tween_property(self, "position", pixel_pos, 0.1)
-	new_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	new_tween.finished.connect(
-		func():
-			self.coord = board_crd
-			sgnl_done_animating.emit()
+	create_tween()\
+		.tween_property(self, "position", pixel_pos, 0.1)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)\
+		.finished.connect(
+			func():
+				self.coord = board_crd
+				sgnl_done_animating.emit()
 	)
 
 func animate_rotation(rot: Global.Rotation) -> void:
-	var new_tween := create_tween()
 	var new_orientation := orientation + (rot as int)
-	new_tween.tween_property(self, "rotation", (new_orientation as float) * PI / 2.0, 0.1)
-	new_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	new_tween.finished.connect(
-		func():
-			self.orientation = new_orientation
-			sgnl_done_animating.emit()
+	create_tween()\
+		.tween_property(self, "rotation", (new_orientation as float) * PI / 2.0, 0.25)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)\
+		.finished.connect(
+			func():
+				self.orientation = new_orientation
+				sgnl_done_animating.emit()
 	)
 
 # = = = = = = = = = = = = = = = = 
@@ -133,11 +133,9 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 func _on_mouse_entered() -> void:
 	if board_ref.drag_state.piece == null:
 		Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
-		#shape_polygon.modulate = Color(1.2, 1.2, 1.2)
 		sgnl_hovered.emit(self)
 
 func _on_mouse_exited() -> void:
 	if board_ref.drag_state.piece == null:
 		Input.set_default_cursor_shape(Input.CURSOR_ARROW)
-		#shape_polygon.modulate = Color.WHITE
 		sgnl_unhovered.emit(self)

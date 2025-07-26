@@ -10,6 +10,7 @@ extends Node2D
 @export_group("Nodes")
 @export var board: BoardShape
 @export var board_tilemap : BoardTilemap
+@export var markers_container: Node2D
 @export var pieces_container: Node2D
 @export var lasers_container: Node2D
 
@@ -30,7 +31,9 @@ var tile_size: Vector2
 # dragging functionality
 class DragState:
 	var piece: Piece = null
+	var original_coord := Vector2i(-1, -1)
 	var offset := Vector2.ZERO
+	var legal_moves: Array[Vector2i] = []
 
 var drag_state := DragState.new()
 
@@ -76,9 +79,13 @@ func put_laser(pos: Vector2i, orientation: int) -> void:
 	laser.rotation = (orientation as float) * PI / 2.0
 	lasers_container.add_child(laser)
 
-func spawn_piece(piece_type: Pieces.Type, piece_team: Pieces.Team, pos: Vector2i, orientation: int) -> void:
+func spawn_piece(piece_team: Pieces.Team, piece_type: Pieces.Type, pos: Vector2i, orientation: int) -> void:
+	for child in pieces_container.get_children():
+		if child is Piece:
+			var child_piece := child as Piece
+			assert (child_piece.coord != pos, "Location already occupied")
 	var piece := piece_scene.instantiate() as Piece
-	piece.initialize(self, piece_type, piece_team, pos, orientation, tile_size)
+	piece.initialize(self, piece_team, piece_type, pos, orientation, tile_size)
 	piece.position = cell_to_pixel(pos)
 	piece.rotation = (orientation as float) * PI / 2.0
 	piece.connect("sgnl_pickup", _on_piece_pickup)
@@ -92,28 +99,30 @@ func _ready() -> void:
 	z_index = 1
 	# add tiles
 	get_board_dimensions()
-	board.initialize(board_tilemap, Vector2(sx, sy), Vector2(nx, ny), tile_size, color_board, color_neutral, color_silver, color_red)
+	board.initialize(
+		markers_container, 
+		board_tilemap, 
+		Vector2(sx, sy), 
+		Vector2(nx, ny), 
+		tile_size, 
+		color_board, 
+		color_neutral, 
+		color_silver, 
+		color_red,
+	)
 	
 	# add lasers
 	put_laser(Vector2i(0, 0), 1)
 	
 	# add the pieces
-	spawn_piece(Pieces.Type.PYRAMID, Pieces.Team.RED, Vector2i(0, 0), 1)
-	spawn_piece(Pieces.Type.DJED, Pieces.Team.SILVER, Vector2i(4, 6), 0)
-	spawn_piece(Pieces.Type.OBELISK, Pieces.Team.SILVER, Vector2i(8, 2), 0)
+	Game.initialize(self, Game.StartingLayout.CLASSIC)
 
 func _input(event: InputEvent) -> void:
 	if drag_state.piece:
 		if event is InputEventMouseMotion:
 			var new_cell_coord := pixel_to_cell(get_global_mouse_position() + drag_state.offset)
-			if new_cell_coord != drag_state.piece.coord:
-				var occupied := false
-				for child in pieces_container.get_children():
-					if child is Piece and (child as Piece).coord == new_cell_coord:
-						occupied = true
-						break
-				if not occupied:
-					drag_state.piece.animate_to_pos(cell_to_pixel(new_cell_coord), new_cell_coord)
+			if new_cell_coord != drag_state.piece.coord and new_cell_coord in drag_state.legal_moves:
+				drag_state.piece.animate_to_pos(cell_to_pixel(new_cell_coord), new_cell_coord)
 		elif event is InputEventMouseButton:
 			var mouse_btn_event := event as InputEventMouseButton
 			if not mouse_btn_event.pressed and mouse_btn_event.button_index == MOUSE_BUTTON_LEFT:
@@ -123,16 +132,30 @@ func _input(event: InputEvent) -> void:
 # signal callbacks
 func _on_piece_pickup(piece: Piece) -> void:
 	if drag_state.piece == null:
-		drag_state.piece = piece
-		drag_state.piece.animate_pickup()
-		drag_state.offset = piece.position - get_global_mouse_position()
 		Input.set_default_cursor_shape(Input.CURSOR_DRAG)
+		drag_state.piece = piece
+		drag_state.original_coord = piece.coord
+		drag_state.legal_moves = Game.legal_moves(self, piece)
+		drag_state.offset = piece.position - get_global_mouse_position()
+		drag_state.piece.animate_pickup()
+		for child in markers_container.get_children():
+			if child is MoveMarker:
+				var move_marker := child as MoveMarker
+				if move_marker.coord in drag_state.legal_moves:
+					move_marker.animate_activate()
 
 func _on_piece_drop() -> void:
+	Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
 	drag_state.piece.animate_drop()
 	drag_state.piece = null
+	drag_state.original_coord = Vector2i(-1, -1)
+	drag_state.legal_moves = []
 	drag_state.offset = Vector2.ZERO
-	Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
+	for child in markers_container.get_children():
+		if child is MoveMarker:
+			var move_marker := child as MoveMarker
+			if move_marker.active:
+				move_marker.animate_deactivate()
 
 func _on_piece_rotate(piece: Piece) -> void:
 	piece.animate_rotation(Global.Rotation.CLOCKWISE)
