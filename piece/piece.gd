@@ -12,13 +12,22 @@ extends Area2D
 @export var surfaces: Node2D
 @export var shape_ghost: CollisionShape2D
 
-signal sgnl_pickup(piece: Piece)
-signal sgnl_rotate(piece: Piece)
+signal sgnl_pickup(piece: Piece, is_stacked_obelisk: bool)
+signal sgnl_rotate_cw(piece: Piece)
+signal sgnl_rotate_ccw(piece: Piece)
 signal sgnl_hovered(piece: Piece)
 signal sgnl_unhovered(piece: Piece)
 signal sgnl_done_animating()
 
 # color dictionaries
+var team_colors: Dictionary[Pieces.Team, Color] = {
+	Pieces.Team.SILVER: color_silver,
+	Pieces.Team.RED: color_red,
+}
+var surftype_colors: Dictionary[Pieces.SurfaceType, Color] = {
+	Pieces.SurfaceType.REFLECTOR: color_surface_reflector,
+	Pieces.SurfaceType.ABSORBER: color_surface_absorber,
+}
 
 # constants
 var type := Pieces.Type.NONE
@@ -31,14 +40,36 @@ var orientation := 0
 
 # external refs
 var board_ref: Board = null
+var tile_size: Vector2
 
 # = = = = = = = = = = = = = = = = 
 # utility functions
+func remove_polygons():
+	for child in polygons.get_children():
+		polygons.remove_child(child)
+		child.queue_free()
+
+func remove_surfaces():
+	for child in surfaces.get_children():
+		surfaces.remove_child(child)
+		child.queue_free()
+
+func set_type(typ: Pieces.Type) -> void:
+	if type != typ:
+		type = typ
+		# piece shape & interaction surfaces
+		remove_polygons()
+		remove_surfaces()
+		assert(type in Pieces.Shapes, "Shape for the given piece type not defined")
+		Pieces.Shapes[type].add_polygons(polygons, tile_size, team_colors[team])
+		Pieces.Shapes[type].add_surfaces(surfaces, tile_size, surftype_colors)
+
 func initialize(brd: Board, tm: Pieces.Team, typ: Pieces.Type, crd: Vector2i, ori: int, ts: Vector2) -> void:
 	assert (typ != Pieces.Type.NONE, "Piece type is NONE")
 	assert (tm != Pieces.Team.NONE, "Piece team is NONE")
 	board_ref = brd
-	type = typ
+	tile_size = ts
+	
 	team = tm
 	
 	z_index = 10
@@ -46,23 +77,10 @@ func initialize(brd: Board, tm: Pieces.Team, typ: Pieces.Type, crd: Vector2i, or
 	coord = crd
 	orientation = ori
 	
-	var team_colors: Dictionary[Pieces.Team, Color] = {
-		Pieces.Team.SILVER: color_silver,
-		Pieces.Team.RED: color_red,
-	}
-	var surftype_colors: Dictionary[Pieces.SurfaceType, Color] = {
-		Pieces.SurfaceType.REFLECTOR: color_surface_reflector,
-		Pieces.SurfaceType.ABSORBER: color_surface_absorber,
-	}
-	
-	assert(type in Pieces.Shapes, "Shape for the given piece type not defined")
-	
-	# piece shape & interaction surfaces
-	Pieces.Shapes[type].add_polygons(polygons, ts, team_colors[team])
-	Pieces.Shapes[type].add_surfaces(surfaces, ts, surftype_colors)
+	set_type(typ)
 	
 	# hover detection with the ghost
-	(shape_ghost.shape as RectangleShape2D).set_size(ts)
+	(shape_ghost.shape as RectangleShape2D).set_size(0.75 * tile_size)
 
 # = = = = = = = = = = = = = = = = 
 # tweens
@@ -122,12 +140,21 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 	if not (event is InputEventMouseButton):
 		return
 	var mouse_event := event as InputEventMouseButton
-	if state == Pieces.State.IDLE and mouse_event.pressed:
-		if mouse_event.button_index == MOUSE_BUTTON_LEFT:
-			sgnl_pickup.emit(self)
+	if state == Pieces.State.IDLE:
+		if mouse_event.pressed:
+			if mouse_event.button_index == MOUSE_BUTTON_LEFT:
+				sgnl_pickup.emit(self, false)
+				get_viewport().set_input_as_handled()
+			elif mouse_event.button_index == MOUSE_BUTTON_RIGHT:
+				if type == Pieces.Type.STACKED_OBELISK:
+					set_type(Pieces.Type.OBELISK)
+					sgnl_pickup.emit(self, true)
+					get_viewport().set_input_as_handled()
+		elif event.is_action_pressed("rotate_clockwise"):
+			sgnl_rotate_cw.emit(self)
 			get_viewport().set_input_as_handled()
-		elif mouse_event.button_index == MOUSE_BUTTON_RIGHT:
-			sgnl_rotate.emit(self)
+		elif event.is_action_pressed("rotate_counterclockwise"):
+			sgnl_rotate_ccw.emit(self)
 			get_viewport().set_input_as_handled()
 
 func _on_mouse_entered() -> void:

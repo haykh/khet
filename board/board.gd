@@ -83,13 +83,16 @@ func spawn_piece(piece_team: Pieces.Team, piece_type: Pieces.Type, pos: Vector2i
 	for child in pieces_container.get_children():
 		if child is Piece:
 			var child_piece := child as Piece
-			assert (child_piece.coord != pos, "Location already occupied")
+			assert ((child_piece.coord != pos) or 
+					(child_piece.type == Pieces.Type.OBELISK and piece_type == Pieces.Type.OBELISK and child_piece.team == piece_team), 
+					"Location already occupied")
 	var piece := piece_scene.instantiate() as Piece
 	piece.initialize(self, piece_team, piece_type, pos, orientation, tile_size)
 	piece.position = cell_to_pixel(pos)
 	piece.rotation = (orientation as float) * PI / 2.0
 	piece.connect("sgnl_pickup", _on_piece_pickup)
-	piece.connect("sgnl_rotate", _on_piece_rotate)
+	piece.connect("sgnl_rotate_cw", func(pc: Piece): pc.animate_rotation(Global.Rotation.CLOCKWISE))
+	piece.connect("sgnl_rotate_ccw", func(pc: Piece): pc.animate_rotation(Global.Rotation.COUNTERCLOCKWISE))
 	piece.connect("sgnl_done_animating", _on_piece_done_animating)
 	pieces_container.add_child(piece)
 
@@ -125,14 +128,17 @@ func _input(event: InputEvent) -> void:
 				drag_state.piece.animate_to_pos(cell_to_pixel(new_cell_coord), new_cell_coord)
 		elif event is InputEventMouseButton:
 			var mouse_btn_event := event as InputEventMouseButton
-			if not mouse_btn_event.pressed and mouse_btn_event.button_index == MOUSE_BUTTON_LEFT:
-				_on_piece_drop()
+			if not mouse_btn_event.pressed:
+				if (mouse_btn_event.button_index == MOUSE_BUTTON_LEFT or mouse_btn_event.button_index == MOUSE_BUTTON_RIGHT):
+					_on_piece_drop()
 
 # = = = = = = = = = = = = = = = = 
 # signal callbacks
-func _on_piece_pickup(piece: Piece) -> void:
+func _on_piece_pickup(piece: Piece, is_stacked_obelisk: bool) -> void:
 	if drag_state.piece == null:
 		Input.set_default_cursor_shape(Input.CURSOR_DRAG)
+		if is_stacked_obelisk:
+			spawn_piece(piece.team, Pieces.Type.OBELISK, piece.coord, 0)
 		drag_state.piece = piece
 		drag_state.original_coord = piece.coord
 		drag_state.legal_moves = Game.legal_moves(self, piece)
@@ -147,6 +153,21 @@ func _on_piece_pickup(piece: Piece) -> void:
 func _on_piece_drop() -> void:
 	Input.set_default_cursor_shape(Input.CURSOR_POINTING_HAND)
 	drag_state.piece.animate_drop()
+	for child in pieces_container.get_children():
+		if child is Piece:
+			var piece := child as Piece
+			if piece != drag_state.piece and piece.coord == drag_state.piece.coord:
+				if drag_state.piece.type == Pieces.Type.DJED:
+					assert (piece.type in [Pieces.Type.PYRAMID, Pieces.Type.OBELISK], "Illegal move called")
+					piece.animate_to_pos(cell_to_pixel(drag_state.original_coord), drag_state.original_coord)
+					break
+				elif drag_state.piece.type == Pieces.Type.OBELISK:
+					assert (piece.team == drag_state.piece.team, "Illegal move called")
+					drag_state.piece.set_type(Pieces.Type.STACKED_OBELISK)
+					pieces_container.remove_child(child)
+					child.queue_free()
+					break
+				break
 	drag_state.piece = null
 	drag_state.original_coord = Vector2i(-1, -1)
 	drag_state.legal_moves = []
@@ -156,9 +177,6 @@ func _on_piece_drop() -> void:
 			var move_marker := child as MoveMarker
 			if move_marker.active:
 				move_marker.animate_deactivate()
-
-func _on_piece_rotate(piece: Piece) -> void:
-	piece.animate_rotation(Global.Rotation.CLOCKWISE)
 
 func _on_piece_done_animating() -> void:
 	for child in lasers_container.get_children():

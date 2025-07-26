@@ -1,6 +1,7 @@
 class_name Game
 
 enum StartingLayout {
+	DEBUG,
 	CLASSIC,
 }
 
@@ -19,6 +20,15 @@ class PieceConfigurations:
 		piece_configs = pc_cfg
 	
 static var Layouts: Dictionary[StartingLayout, PieceConfigurations] = {
+	StartingLayout.DEBUG: PieceConfigurations.new([
+		PieceConfiguration.new(Pieces.Type.PYRAMID, Vector2i(2, 7), 2),
+		PieceConfiguration.new(Pieces.Type.PYRAMID, Vector2i(2, 4), 2),
+		PieceConfiguration.new(Pieces.Type.OBELISK, Vector2i(6, 7), 0),
+		PieceConfiguration.new(Pieces.Type.STACKED_OBELISK, Vector2i(6, 4), 0),
+		PieceConfiguration.new(Pieces.Type.DJED, Vector2i(4, 4), 0),
+		PieceConfiguration.new(Pieces.Type.DJED, Vector2i(5, 4), 1),
+		PieceConfiguration.new(Pieces.Type.PHARAOH, Vector2i(5, 7), 0),
+	]),
 	StartingLayout.CLASSIC: PieceConfigurations.new([
 		PieceConfiguration.new(Pieces.Type.PYRAMID, Vector2i(2, 7), 2),
 		PieceConfiguration.new(Pieces.Type.PYRAMID, Vector2i(2, 4), 2),
@@ -29,6 +39,9 @@ static var Layouts: Dictionary[StartingLayout, PieceConfigurations] = {
 		PieceConfiguration.new(Pieces.Type.PYRAMID, Vector2i(9, 3), 2),
 		PieceConfiguration.new(Pieces.Type.DJED, Vector2i(4, 4), 0),
 		PieceConfiguration.new(Pieces.Type.DJED, Vector2i(5, 4), 1),
+		PieceConfiguration.new(Pieces.Type.STACKED_OBELISK, Vector2i(3, 7), 0),
+		PieceConfiguration.new(Pieces.Type.STACKED_OBELISK, Vector2i(5, 7), 0),
+		PieceConfiguration.new(Pieces.Type.PHARAOH, Vector2i(4, 7), 0),
 	])
 }
 
@@ -42,13 +55,18 @@ static func legal_moves(board: Board, piece: Piece) -> Array[Vector2i]:
 	var moves: Array[Vector2i] = []
 	for i in board.nx:
 		for j in board.ny:
-			if abs(i - piece.coord.x) <= 1 and abs(j - piece.coord.y) <= 1:
+			if absi(i - piece.coord.x) <= 1 and absi(j - piece.coord.y) <= 1:
 				moves.append(Vector2i(i, j))
 	for child in board.pieces_container.get_children():
 		if child is Piece:
 			var other_piece := child as Piece
 			if other_piece != piece:
-				moves.erase(other_piece.coord)
+				if piece.type == Pieces.Type.OBELISK and other_piece.type == Pieces.Type.OBELISK and piece.team == other_piece.team:
+					continue
+				elif piece.type == Pieces.Type.DJED and other_piece.type in [Pieces.Type.PYRAMID, Pieces.Type.OBELISK]:
+					continue
+				else:
+					moves.erase(other_piece.coord)
 	if piece.team == Pieces.Team.RED:
 		moves.erase(Vector2i(1, 0))
 		moves.erase(Vector2i(1, board.ny - 1))

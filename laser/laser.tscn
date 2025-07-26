@@ -5,8 +5,6 @@
 [node name="Laser" type="Polygon2D" node_paths=PackedStringArray("beam", "beam_highlight")]
 polygon = PackedVector2Array(-8, -8, 8, -8, 16, 0, 8, 8, -8, 8)
 script = ExtResource("1_fn5yt")
-color_laser = Color(0.87731, 0.000309962, 0.000170287, 1)
-color_laser_highlight = Color(1, 0.858192, 0.834241, 1)
 beam = NodePath("Beam")
 beam_highlight = NodePath("BeamHighlight")
 

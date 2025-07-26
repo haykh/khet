@@ -16,8 +16,8 @@ func initialize(crd: Vector2i, tile_size: Vector2) -> void:
 	radial_gradient.set_fill_from(Vector2(0.5, 0.5))
 	radial_gradient.set_fill_to(Vector2(1.0, 0.5))
 	radial_gradient.gradient = Gradient.new()
-	radial_gradient.gradient.offsets = PackedFloat32Array([0.0, 0.95, 1.0])
-	radial_gradient.gradient.colors = PackedColorArray([Color.WHITE, Color.WHITE, Color(1.0, 1.0, 1.0, 0.0)])
+	radial_gradient.gradient.offsets = PackedFloat32Array([0.5, 1.0])
+	radial_gradient.gradient.colors = PackedColorArray([Color(0.180392, 0.545098, 0.341176, 1), Color(0.180392, 0.545098, 0.341176, 0)])
 	radial_gradient.gradient.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_LINEAR
 	circle_sprite.texture = radial_gradient
 	add_child(circle_sprite)
