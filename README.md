@@ -5,6 +5,7 @@
 
 ![main-menu](demo/main-screen.png)
 ![new-game](demo/new-game.png)
+![end-game](demo/end-game.png)
 
 This project is an attempt to bring the original charm of Khet as a 2D game written fully in Godot.
 
