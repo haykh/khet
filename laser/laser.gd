@@ -1,11 +1,6 @@
 class_name Laser
 extends Polygon2D
 
-@export_group("Colors", "color_")
-@export_color_no_alpha var color_base := Color("#303bbf")
-@export_color_no_alpha var color_laser := Color("#e00000")
-@export_color_no_alpha var color_laser_highlight := Color("#ffdbd5")
-
 @export_group("Nodes")
 @export var beam: Line2D
 @export var beam_highlight: Line2D
@@ -18,6 +13,11 @@ extends Polygon2D
 var active := false
 var coord := Vector2i.ZERO
 var orientation := 0
+
+# colors
+var color_base: Color
+var color_light: Color
+var color_highlight: Color
 
 # external refs
 var board_ref: Board = null
@@ -32,10 +32,10 @@ func initialize(brd: Board, crd: Vector2i, ori: int) -> void:
 	color = color_base
 	beam.z_index = 20
 	beam.width = 4
-	beam.default_color = color_laser
+	beam.default_color = color_light
 	beam_highlight.z_index = 21
 	beam_highlight.width = 1.5
-	beam_highlight.default_color = color_laser_highlight
+	beam_highlight.default_color = color_highlight
 	beam.clear_points()
 	beam_highlight.clear_points()
 
@@ -58,12 +58,12 @@ func _draw() -> void:
 		
 		for _i in beam_max_steps:
 			var segments: Array[Global.SegmentWithCallback]
-			for i in range(board_ref.board.polygon.size()):
-				var pt1 := board_ref.board.polygon[i]
-				var pt2 := board_ref.board.polygon[(i + 1) % board_ref.board.polygon.size()]
+			for i in range(board_ref.board_shape.polygon.size()):
+				var pt1 := board_ref.board_shape.polygon[i]
+				var pt2 := board_ref.board_shape.polygon[(i + 1) % board_ref.board_shape.polygon.size()]
 				segments.append(Global.SegmentWithCallback.new(
-					board_ref.board.to_global(pt1),
-					board_ref.board.to_global(pt2),
+					board_ref.board_shape.to_global(pt1),
+					board_ref.board_shape.to_global(pt2),
 					func() -> bool:
 						return false
 				))

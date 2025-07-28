@@ -7,7 +7,6 @@ enum Type {
 	OBELISK,
 	STACKED_OBELISK,
 	PHARAOH,
-	# more to be added
 }
 
 enum State {

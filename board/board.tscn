@@ -6,18 +6,18 @@
 [ext_resource type="Script" uid="uid://5hngs1dtt6t4" path="res://board/board_tilemap.gd" id="4_eiwly"]
 [ext_resource type="Script" uid="uid://dexvnckc7eu7q" path="res://board/board_shape.gd" id="4_hecc7"]
 
-[node name="Board" type="Node2D" node_paths=PackedStringArray("board", "board_tilemap", "markers_container", "pieces_container", "lasers_container")]
+[node name="Board" type="Node2D" node_paths=PackedStringArray("board_shape", "board_tilemap", "markers_container", "pieces_container", "lasers_container")]
 script = ExtResource("1_p0ybc")
-board = NodePath("Shape")
+board_shape = NodePath("Shape")
 board_tilemap = NodePath("Shape/TileMapLayer")
 markers_container = NodePath("Markers")
 pieces_container = NodePath("Pieces")
 lasers_container = NodePath("Lasers")
-laser_scene = ExtResource("3_8l818")
-piece_scene = ExtResource("2_psm7c")
+scene_laser = ExtResource("3_8l818")
+scene_piece = ExtResource("2_psm7c")
 
 [node name="Shape" type="Polygon2D" parent="."]
-position = Vector2(984, 560)
+position = Vector2(944, 536)
 color = Color(0.16, 0.16, 0.16, 1)
 polygon = PackedVector2Array(-440, -352, -440, 352, 440, 352, 440, -352)
 script = ExtResource("4_hecc7")

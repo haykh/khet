@@ -3,15 +3,15 @@ extends TileMapLayer
 
 var color_to_alt_id: Dictionary[Color, int] = {}
 
-func initialize(tile_size: Vector2i, colors: Array[Color], padding := 4) -> void:
+func initialize(tile_size: Vector2, colors: Array[Color], padding := 4) -> void:
 	var new_tile_set := TileSet.new()
 	new_tile_set.tile_size = tile_size
 	var atlas_source := TileSetAtlasSource.new()
-	var img := Image.create(tile_size.x, tile_size.y, false, Image.FORMAT_RGBA8)
+	var img := Image.create(tile_size.x as int, tile_size.y as int, false, Image.FORMAT_RGBA8)
 	img.fill(Color.WHITE)
 	var img_texture := ImageTexture.create_from_image(img)
 	atlas_source.texture = img_texture
-	atlas_source.texture_region_size = tile_size - Vector2i(padding, padding)
+	atlas_source.texture_region_size = (tile_size as Vector2i) - Vector2i(padding, padding)
 	atlas_source.create_tile(Vector2i.ZERO)
 	color_to_alt_id.clear()
 	for color in colors:

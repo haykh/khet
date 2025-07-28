@@ -1,5 +1,8 @@
 class_name Global
 
+# = = = = = = = = = = = = = = = = 
+# Utility
+
 const INT_MAX := 9223372036854775807
 
 class Direction:
@@ -25,6 +28,55 @@ class Direction:
 enum Rotation {
 	CLOCKWISE = 1,
 	COUNTERCLOCKWISE = -1
+}
+
+# = = = = = = = = = = = = = = = = 
+# Starting Layouts
+
+enum StartingLayout {
+	NONE,
+	DEBUG,
+	CLASSIC,
+}
+
+class PieceConfiguration:
+	var type: Pieces.Type
+	var coord: Vector2i
+	var orientation: int
+	func _init(typ: Pieces.Type, crd: Vector2i, ori: int) -> void:
+		self.type = typ
+		self.coord = crd
+		self.orientation = ori
+
+class PieceConfigurations:
+	var piece_configs: Array[PieceConfiguration]
+	func _init(pc_cfg: Array[PieceConfiguration]) -> void:
+		piece_configs = pc_cfg
+	
+static var Layouts: Dictionary[StartingLayout, PieceConfigurations] = {
+	StartingLayout.DEBUG: PieceConfigurations.new([
+		PieceConfiguration.new(Pieces.Type.PYRAMID, Vector2i(2, 7), 2),
+		PieceConfiguration.new(Pieces.Type.PYRAMID, Vector2i(2, 4), 2),
+		PieceConfiguration.new(Pieces.Type.OBELISK, Vector2i(6, 7), 0),
+		PieceConfiguration.new(Pieces.Type.STACKED_OBELISK, Vector2i(6, 4), 0),
+		PieceConfiguration.new(Pieces.Type.DJED, Vector2i(4, 4), 0),
+		PieceConfiguration.new(Pieces.Type.DJED, Vector2i(5, 4), 1),
+		PieceConfiguration.new(Pieces.Type.PHARAOH, Vector2i(5, 7), 0),
+	]),
+	StartingLayout.CLASSIC: PieceConfigurations.new([
+		PieceConfiguration.new(Pieces.Type.PYRAMID, Vector2i(2, 7), 2),
+		PieceConfiguration.new(Pieces.Type.PYRAMID, Vector2i(2, 4), 2),
+		PieceConfiguration.new(Pieces.Type.PYRAMID, Vector2i(2, 3), 1),
+		PieceConfiguration.new(Pieces.Type.PYRAMID, Vector2i(3, 2), 2),
+		PieceConfiguration.new(Pieces.Type.PYRAMID, Vector2i(7, 6), 3),
+		PieceConfiguration.new(Pieces.Type.PYRAMID, Vector2i(9, 4), 1),
+		PieceConfiguration.new(Pieces.Type.PYRAMID, Vector2i(9, 3), 2),
+		PieceConfiguration.new(Pieces.Type.DJED, Vector2i(4, 4), 0),
+		PieceConfiguration.new(Pieces.Type.DJED, Vector2i(5, 4), 1),
+		PieceConfiguration.new(Pieces.Type.STACKED_OBELISK, Vector2i(3, 7), 0),
+		PieceConfiguration.new(Pieces.Type.STACKED_OBELISK, Vector2i(5, 7), 0),
+		PieceConfiguration.new(Pieces.Type.PHARAOH, Vector2i(4, 7), 0),
+	])
 }
 
 # = = = = = = = = = = = = = = = = 
